@@ -8,9 +8,9 @@ Local sandbox for simulating Pico keypad and OLED output.
 """
 
 from chess_state import SandboxState
+from analysis import AnalysisEngine
 
-
-def draw(state):
+def draw(state, analysis):
     print("\033c", end="")
 
     print("=== INPUT OLED ===")
@@ -28,15 +28,21 @@ def draw(state):
             print(f"{prefix} {m}")
 
     print("\n=== ANALYSIS OLED ===")
-    print("Fake analysis")
+    print(f"Depth: {analysis.depth}")
+    for i, line in enumerate(analysis.lines, 1):
+        sign = "+" if line.eval >= 0 else ""
+        print(f"{i}. {line.move} {sign}{line.eval:.2f}")
+        
     print("\nKeys: 2↑ 8↓ 5✓ 0← 9=undo q quit")
 
 
 def main():
     state = SandboxState()
+    engine = AnalysisEngine()
 
     while True:
-        draw(state)
+        analysis = engine.analyse(state.board)
+        draw(state, analysis)
         key = input("> ").strip()
 
         if key == "q":

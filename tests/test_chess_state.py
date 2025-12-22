@@ -82,3 +82,16 @@ def test_undo_reverts_last_move():
     assert state.board.move_stack == []
     assert state.mode == state.ROOT
     assert state.selected_from is None
+    
+from server.analysis import AnalysisEngine
+
+
+def test_analysis_stub_returns_lines():
+    engine = AnalysisEngine()
+    state = SandboxState()
+
+    result = engine.analyse(state.board)
+
+    assert result.depth >= 1
+    assert len(result.lines) == 3
+    assert all(hasattr(l, "move") for l in result.lines)
