@@ -5,7 +5,7 @@ This document defines the JSON message protocol used between:
 - **Server** (Mac, Python, Stockfish)
 - **Client** (Raspberry Pi Pico W, MicroPython)
 
-Transport: WebSocket  
+Transport: **HTTP (JSON over REST)**  
 Encoding: UTF-8 JSON  
 State authority: **Server-only**
 
@@ -35,6 +35,8 @@ All messages include:
 ---
 
 ## Client → Server messages
+
+All client commands are sent via **HTTP POST** unless stated otherwise.
 
 ### `get_state`
 
