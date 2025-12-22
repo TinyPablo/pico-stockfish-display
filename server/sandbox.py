@@ -10,36 +10,50 @@ Local sandbox for simulating Pico keypad and OLED output.
 from chess_state import SandboxState
 
 
-def draw(last_key: str | None):
-    print("\033c", end="")  # clear terminal
+def draw(state):
+    print("\033c", end="")
 
     print("=== INPUT OLED ===")
-    print("Use keys 1–16 to simulate keypad")
-    print()
-    if last_key is None:
-        print("Last key: -")
-    else:
-        print(f"Last key: {last_key}")
+
+    if state.mode == state.ROOT:
+        print("Sandbox root")
+        print("5 = select")
+    elif state.mode == state.PIECE_LIST:
+        for i, p in enumerate(state.pieces):
+            prefix = ">" if i == state.cursor else " "
+            print(f"{prefix} {p}")
+    elif state.mode == state.MOVE_LIST:
+        for i, m in enumerate(state.moves):
+            prefix = ">" if i == state.cursor else " "
+            print(f"{prefix} {m}")
 
     print("\n=== ANALYSIS OLED ===")
-    print("No analysis (sandbox mode)")
-    print("\n(q to quit)")
+    print("Fake analysis")
+    print("\nKeys: 2↑ 8↓ 5✓ 0← q quit")
 
 
 def main():
     state = SandboxState()
 
     while True:
-        draw(state.last_key)
+        draw(state)
         key = input("> ").strip()
 
         if key == "q":
             break
-
-        if key.isdigit() and 1 <= int(key) <= 16:
-            state.register_key(key)
-        else:
-            state.register_key("invalid")
+        elif key == "2":
+            state.move_cursor_up()
+        elif key == "8":
+            max_items = (
+                len(state.pieces)
+                if state.mode == state.PIECE_LIST
+                else len(state.moves)
+            )
+            state.move_cursor_down(max_items)
+        elif key == "5":
+            state.select()
+        elif key == "0":
+            state.back()
 
 
 if __name__ == "__main__":
