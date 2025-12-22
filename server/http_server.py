@@ -1,4 +1,5 @@
 import json
+import atexit
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from server.chess_state import SandboxState
@@ -16,21 +17,42 @@ engine = StockfishAnalysisEngine(
     time_limit=0.2,
 )
 
+last_fen = None
+last_analysis = None
+
+
+@atexit.register
+def shutdown():
+    engine.stop()
+
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
+        global last_fen, last_analysis
+
         if self.path != "/state":
             self.send_response(404)
             self.end_headers()
             return
 
-        analysis = engine.analyse(state.board)
+        fen = state.board.fen()
+
+        if last_analysis is None or fen != last_fen:
+            analysis = engine.analyse(state.board)
+            last_analysis = analysis
+            last_fen = fen
+        else:
+            analysis = last_analysis
 
         response = {
             "type": "state",
             "turn": "white" if state.board.turn else "black",
             "move_number": state.board.fullmove_number,
-            "last_move": state.board.peek().uci() if state.board.move_stack else None,
+            "last_move": (
+                state.board.peek().uci()
+                if state.board.move_stack
+                else None
+            ),
             "analysis": {
                 "depth": analysis.depth,
                 "lines": [
@@ -58,7 +80,4 @@ def main():
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    finally:
-        engine.stop()
+    main()
