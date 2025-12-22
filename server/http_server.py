@@ -1,5 +1,6 @@
 import json
 import atexit
+import chess
 from urllib.parse import urlparse
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
@@ -31,45 +32,59 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         global last_fen, last_analysis
 
-        if self.path != "/state":
-            self.send_response(404)
-            self.end_headers()
+        if self.path == "/state":
+            fen = state.board.fen()
+
+            if last_analysis is None or fen != last_fen:
+                analysis = engine.analyse(state.board)
+                last_analysis = analysis
+                last_fen = fen
+            else:
+                analysis = last_analysis
+
+            response = {
+                "type": "state",
+                "turn": "white" if state.board.turn else "black",
+                "move_number": state.board.fullmove_number,
+                "last_move": (
+                    state.board.peek().uci()
+                    if state.board.move_stack
+                    else None
+                ),
+                "analysis": {
+                    "depth": analysis.depth,
+                    "lines": [
+                        {"move": l.move, "eval": l.eval}
+                        for l in analysis.lines
+                    ],
+                },
+            }
+
+            self._send_json(200, response)
             return
 
-        fen = state.board.fen()
+        if self.path == "/piece_list":
+            seen = set()
+            pieces = []
 
-        if last_analysis is None or fen != last_fen:
-            analysis = engine.analyse(state.board)
-            last_analysis = analysis
-            last_fen = fen
-        else:
-            analysis = last_analysis
+            for move in state.board.legal_moves:
+                sq = chess.square_name(move.from_square)
+                if sq not in seen:
+                    seen.add(sq)
+                    pieces.append(sq)
 
-        response = {
-            "type": "state",
-            "turn": "white" if state.board.turn else "black",
-            "move_number": state.board.fullmove_number,
-            "last_move": (
-                state.board.peek().uci()
-                if state.board.move_stack
-                else None
-            ),
-            "analysis": {
-                "depth": analysis.depth,
-                "lines": [
-                    {"move": l.move, "eval": l.eval}
-                    for l in analysis.lines
-                ],
-            },
-        }
+            pieces.sort()
 
-        body = json.dumps(response).encode()
+            response = {
+                "type": "piece_list",
+                "pieces": pieces,
+            }
 
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(body)))
+            self._send_json(200, response)
+            return
+
+        self.send_response(404)
         self.end_headers()
-        self.wfile.write(body)
         
     def do_POST(self):
         global last_fen, last_analysis
@@ -105,6 +120,35 @@ class Handler(BaseHTTPRequestHandler):
             last_analysis = None
 
             response = {"type": "move_result", "ok": ok}
+            self._send_json(200, response)
+            
+            
+        elif self.path == "/move_list":
+            body = self.read_json()
+            if not body or "from" not in body:
+                self.send_response(400)
+                self.end_headers()
+                return
+
+            try:
+                from_sq = chess.parse_square(body["from"])
+            except Exception:
+                self.send_response(400)
+                self.end_headers()
+                return
+
+            moves = sorted({
+                chess.square_name(m.to_square)
+                for m in state.board.legal_moves
+                if m.from_square == from_sq
+            })
+
+            response = {
+                "type": "move_list",
+                "from": body["from"],
+                "moves": moves,
+            }
+
             self._send_json(200, response)
 
         else:
