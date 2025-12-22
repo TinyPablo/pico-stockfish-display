@@ -77,3 +77,18 @@ class SandboxState:
             for m in self.board.legal_moves
             if m.from_square == sq
         })
+
+    def undo(self) -> bool:
+        """
+        Undo the last move. Returns True if a move was undone.
+        """
+        if not self.board.move_stack:
+            return False
+
+        self.board.pop()
+        self.selected_from = None
+        self.mode = self.ROOT
+        self.cursor = 0
+        self.update_pieces()
+        self.moves = []
+        return True

@@ -29,7 +29,7 @@ def draw(state):
 
     print("\n=== ANALYSIS OLED ===")
     print("Fake analysis")
-    print("\nKeys: 2↑ 8↓ 5✓ 0← q quit")
+    print("\nKeys: 2↑ 8↓ 5✓ 0← 9=undo q quit")
 
 
 def main():
@@ -54,6 +54,8 @@ def main():
             state.select()
         elif key == "0":
             state.back()
+        elif key == "9":
+            state.undo()
 
 
 if __name__ == "__main__":

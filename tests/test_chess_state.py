@@ -59,3 +59,26 @@ def test_back_from_move_list():
 
     assert state.mode == state.PIECE_LIST
     assert state.selected_from is None
+    
+def test_undo_on_empty_is_safe():
+    state = SandboxState()
+    assert state.undo() is False
+
+
+def test_undo_reverts_last_move():
+    state = SandboxState()
+
+    # make one legal move using the state API
+    state.mode = state.PIECE_LIST
+    state.cursor = 0
+    state.select()          # -> MOVE_LIST
+    state.cursor = 0
+    fen_before = state.board.fen()
+    state.select()          # plays move, back to ROOT
+
+    assert state.board.move_stack  # one move exists
+
+    assert state.undo() is True
+    assert state.board.move_stack == []
+    assert state.mode == state.ROOT
+    assert state.selected_from is None
