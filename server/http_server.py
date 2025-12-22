@@ -1,5 +1,6 @@
 import json
 import atexit
+from urllib.parse import urlparse
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from server.chess_state import SandboxState
@@ -69,9 +70,63 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+        
+    def do_POST(self):
+        global last_fen, last_analysis
+
+        if self.path == "/play_move":
+            body = self.read_json()
+            if not body or "move" not in body:
+                self.send_response(400)
+                self.end_headers()
+                return
+
+            move = body["move"]
+
+            try:
+                state.board.push_uci(move)
+                last_fen = None
+                last_analysis = None
+
+                response = {"type": "move_result", "ok": True}
+                self._send_json(200, response)
+
+            except Exception:
+                response = {
+                    "type": "move_result",
+                    "ok": False,
+                    "reason": "illegal_move",
+                }
+                self._send_json(200, response)
+
+        elif self.path == "/undo":
+            ok = state.undo()
+            last_fen = None
+            last_analysis = None
+
+            response = {"type": "move_result", "ok": ok}
+            self._send_json(200, response)
+
+        else:
+            self.send_response(404)
+            self.end_headers()
 
     def log_message(self, *_):
         pass  # silence default logging
+    
+    def read_json(self):
+        length = int(self.headers.get("Content-Length", 0))
+        if length == 0:
+            return None
+        return json.loads(self.rfile.read(length))
+    
+    def _send_json(self, code, obj):
+        body = json.dumps(obj).encode()
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
 
 def main():
