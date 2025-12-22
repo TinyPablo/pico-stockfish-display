@@ -1,11 +1,17 @@
-# pico-stockfish-display
+## Current status
 
-Raspberry Pi Pico W client that displays live Stockfish chess analysis
-received over Wi-Fi from a Mac-based Python server.
+**v0.1 – Pico read-only display**
 
-The project consists of:
+Implemented:
 
-- a Python server running Stockfish and exposing a simple protocol
-- a MicroPython client handling keypad input and OLED output
+- Python server with Stockfish-backed analysis
+- HTTP polling endpoint (`/state`)
+- Raspberry Pi Pico W client
+- Dual SSD1306 OLED output (state + analysis)
+- Wi-Fi connectivity and periodic refresh
 
-Development is incremental and sandbox-driven.
+Not yet implemented:
+
+- move submission
+- undo
+- keypad → server control
