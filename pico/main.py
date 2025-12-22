@@ -1,7 +1,9 @@
-# Entry point for Pico firmware
+from wifi import connect
+
 
 def main():
-    print("Pico client starting")
+    wlan = connect()
+    print("Ready, IP:", wlan.ifconfig()[0])
 
 
 if __name__ == "__main__":

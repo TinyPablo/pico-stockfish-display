@@ -21,3 +21,6 @@ venv/
 
 # ---------- Local tooling ----------
 pd.txt
+
+# ---------- Secrets ----------
+pico/secrets.py
