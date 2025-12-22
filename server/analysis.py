@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import List
 
 
 @dataclass
@@ -11,7 +10,7 @@ class AnalysisLine:
 @dataclass
 class AnalysisResult:
     depth: int
-    lines: List[AnalysisLine]
+    lines: list[AnalysisLine]
 
 
 class AnalysisEngine:
