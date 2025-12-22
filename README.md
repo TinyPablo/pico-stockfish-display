@@ -12,6 +12,5 @@ Implemented:
 
 Not yet implemented:
 
-- move submission
-- undo
-- keypad → server control
+- Pico keypad input
+- Pico → server command wiring
