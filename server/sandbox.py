@@ -6,16 +6,20 @@ Local sandbox for simulating Pico keypad and OLED output.
 - No networking
 - No hardware
 """
-def draw(input_key: str | None):
+
+from chess_state import SandboxState
+
+
+def draw(last_key: str | None):
     print("\033c", end="")  # clear terminal
 
     print("=== INPUT OLED ===")
     print("Use keys 1–16 to simulate keypad")
     print()
-    if input_key is None:
+    if last_key is None:
         print("Last key: -")
     else:
-        print(f"Last key: {input_key}")
+        print(f"Last key: {last_key}")
 
     print("\n=== ANALYSIS OLED ===")
     print("No analysis (sandbox mode)")
@@ -23,19 +27,19 @@ def draw(input_key: str | None):
 
 
 def main():
-    last_key = None
+    state = SandboxState()
 
     while True:
-        draw(last_key)
+        draw(state.last_key)
         key = input("> ").strip()
 
         if key == "q":
             break
 
         if key.isdigit() and 1 <= int(key) <= 16:
-            last_key = key
+            state.register_key(key)
         else:
-            last_key = "invalid"
+            state.register_key("invalid")
 
 
 if __name__ == "__main__":
