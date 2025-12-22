@@ -1,5 +1,6 @@
 import chess
 from server.chess_state import SandboxState
+from server.analysis import StubAnalysisEngine
 
 
 def test_initial_state():
@@ -83,11 +84,11 @@ def test_undo_reverts_last_move():
     assert state.mode == state.ROOT
     assert state.selected_from is None
     
-from server.analysis import AnalysisEngine
+from server.analysis import StubAnalysisEngine
 
 
 def test_analysis_stub_returns_lines():
-    engine = AnalysisEngine()
+    engine = StubAnalysisEngine()
     state = SandboxState()
 
     result = engine.analyse(state.board)

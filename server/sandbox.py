@@ -8,7 +8,7 @@ Local sandbox for simulating Pico keypad and OLED output.
 """
 
 from chess_state import SandboxState
-from analysis import AnalysisEngine
+from analysis import StockfishAnalysisEngine
 
 def draw(state, analysis):
     print("\033c", end="")
@@ -36,32 +36,39 @@ def draw(state, analysis):
     print("\nKeys: 2↑ 8↓ 5✓ 0← 9=undo q quit")
 
 
+
 def main():
     state = SandboxState()
-    engine = AnalysisEngine()
+    engine = StockfishAnalysisEngine(
+        engine_path="/opt/homebrew/bin/stockfish",
+        time_limit=0.2,
+    )
 
-    while True:
-        analysis = engine.analyse(state.board)
-        draw(state, analysis)
-        key = input("> ").strip()
+    try:
+        while True:
+            analysis = engine.analyse(state.board)
+            draw(state, analysis)
+            key = input("> ").strip()
 
-        if key == "q":
-            break
-        elif key == "2":
-            state.move_cursor_up()
-        elif key == "8":
-            max_items = (
-                len(state.pieces)
-                if state.mode == state.PIECE_LIST
-                else len(state.moves)
-            )
-            state.move_cursor_down(max_items)
-        elif key == "5":
-            state.select()
-        elif key == "0":
-            state.back()
-        elif key == "9":
-            state.undo()
+            if key == "q":
+                break
+            elif key == "2":
+                state.move_cursor_up()
+            elif key == "8":
+                max_items = (
+                    len(state.pieces)
+                    if state.mode == state.PIECE_LIST
+                    else len(state.moves)
+                )
+                state.move_cursor_down(max_items)
+            elif key == "5":
+                state.select()
+            elif key == "0":
+                state.back()
+            elif key == "9":
+                state.undo()
+    finally:
+        engine.stop()
 
 
 if __name__ == "__main__":
