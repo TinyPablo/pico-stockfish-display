@@ -26,10 +26,9 @@ class Display:
         oled = self.state_oled
         oled.fill(0)
 
-        oled.text("STATE", 0, 0)
-        oled.text("Turn: %s" % (turn,), 0, 16)
-        oled.text("Move: %s" % (move_number,), 0, 26)
-        oled.text("Last: %s" % (last_move or "--",), 0, 36)
+        oled.text("Turn: %s" % (turn,), 0, 0)
+        oled.text("Move: %s" % (move_number,), 0, 12)
+        oled.text("Last: %s" % (last_move or "--",), 0, 24)
 
         oled.text("SEL=pieces", 0, 54)
         oled.show()
