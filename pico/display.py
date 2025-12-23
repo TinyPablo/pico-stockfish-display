@@ -4,10 +4,7 @@ from lib.ssd1306 import SSD1306_I2C
 
 class Display:
     def __init__(self):
-        # I2C0 -> INPUT / STATE OLED
         self.i2c0 = I2C(0, sda=Pin(0), scl=Pin(1), freq=400_000)
-
-        # I2C1 -> ANALYSIS OLED
         self.i2c1 = I2C(1, sda=Pin(6), scl=Pin(7), freq=400_000)
 
         self.state_oled = SSD1306_I2C(128, 64, self.i2c0)
@@ -22,15 +19,19 @@ class Display:
         self.analysis_oled.show()
 
     # ---------- ROOT STATE ----------
-    def show_state(self, turn, move_number, last_move):
+    def show_state(self, turn, move_number, last_move, mode_char="S"):
         oled = self.state_oled
         oled.fill(0)
 
-        oled.text("Turn: %s" % (turn,), 0, 0)
-        oled.text("Move: %s" % (move_number,), 0, 12)
-        oled.text("Last: %s" % (last_move or "--",), 0, 24)
+        t = (turn or "?")[:1].upper()
+        oled.text("%s T:%s M:%s" % (mode_char, t, move_number), 0, 0)
+        oled.text("L:%s" % (last_move or "--",), 0, 12)
 
-        oled.text("SEL=pieces", 0, 54)
+        if mode_char == "S":
+            oled.text("SEL=pieces", 0, 54)
+        else:
+            oled.text("FAST", 0, 54)
+
         oled.show()
 
     # ---------- MENUS ----------
@@ -45,11 +46,10 @@ class Display:
             offset = max_off
         return offset
 
-    def _show_menu(self, title: str, lines: list, cursor: int, footer: str = ""):
+    def _show_menu(self, lines: list, cursor: int, footer: str = ""):
         oled = self.state_oled
         oled.fill(0)
 
-        # No title line (remove "PIECES"/"MOVES")
         max_visible = 4
         n = len(lines)
         off = self._menu_window(cursor, n, max_visible)
@@ -66,7 +66,6 @@ class Display:
         oled.show()
 
     def _piece_to_label(self, p) -> str:
-        # p can be dict {"square": "...", "piece": "..."} OR string "e2 pawn"
         if isinstance(p, dict):
             sq = p.get("square", "??")
             name = p.get("piece", "?")
@@ -79,20 +78,19 @@ class Display:
             return parts[0]
         return "?? ?"
 
-    def show_piece_list(self, pieces, cursor: int):
+    def show_piece_list(self, pieces, cursor: int, mode_char="S"):
         lines = [self._piece_to_label(p) for p in (pieces or [])]
-        self._show_menu("", lines, cursor, "UD SEL BK")
+        self._show_menu(lines, cursor, "%s UD SEL BK" % mode_char)
 
-    def show_move_list(self, from_sq: str, moves: list, cursor: int):
+    def show_move_list(self, from_sq: str, moves: list, cursor: int, mode_char="S"):
         lines = ["%s->%s" % (from_sq, m) for m in (moves or [])]
-        self._show_menu("", lines, cursor, "UD SEL BK")
+        self._show_menu(lines, cursor, "%s UD SEL BK" % mode_char)
 
     # ---------- ANALYSIS OLED ----------
     def show_analysis(self, depth, lines):
         oled = self.analysis_oled
         oled.fill(0)
 
-        # header: depth + eval indicator
         if lines:
             e = lines[0].get("eval", 0.0)
             side = "W" if e >= 0 else "B"

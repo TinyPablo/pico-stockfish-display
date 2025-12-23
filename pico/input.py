@@ -14,6 +14,7 @@ BEST2 = "BEST2"   # s8
 BEST3 = "BEST3"   # s12
 
 RESET = "RESET" # s5
+TOGGLE_MODE = "TOGGLE_MODE"  # s10
 
 
 class Input:
@@ -57,6 +58,7 @@ class Input:
             12: BEST3,  # row3 col4 (s12)
             
             5: RESET,   # s5
+            10: TOGGLE_MODE,  # s10
         }
 
         self.debounce_ms = debounce_ms
