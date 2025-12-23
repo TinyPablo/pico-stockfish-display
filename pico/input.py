@@ -9,6 +9,10 @@ SELECT = "SELECT"
 BACK = "BACK"
 UNDO = "UNDO"
 
+BEST1 = "BEST1"   # s4
+BEST2 = "BEST2"   # s8
+BEST3 = "BEST3"   # s12
+
 
 class Input:
     """
@@ -45,6 +49,10 @@ class Input:
             14: SELECT,
             15: BACK,
             16: UNDO,
+
+            4: BEST1,   # row1 col4 (s4)
+            8: BEST2,   # row2 col4 (s8)
+            12: BEST3,  # row3 col4 (s12)
         }
 
         self.debounce_ms = debounce_ms
@@ -82,20 +90,17 @@ class Input:
                 return s
 
             if len(pressed_rows) > 1:
-                # multi-press / ghosting -> ignore (your "one at a time" rule)
                 return None
 
         return None
 
     def read(self):
         """
-        Returns one of: UP/DOWN/SELECT/BACK/UNDO on new press, else None.
+        Returns one of mapped events on new press, else None.
         """
         raw = self._scan_raw_key()
-
         now = time.ticks_ms()
 
-        # debounce: track candidate changes
         if raw != self._candidate:
             self._candidate = raw
             self._candidate_t = now
@@ -104,12 +109,10 @@ class Input:
         if time.ticks_diff(now, self._candidate_t) < self.debounce_ms:
             return None
 
-        # candidate is stable; edge-detect press
         if self._stable != self._candidate:
             prev = self._stable
             self._stable = self._candidate
 
-            # emit only on press edge (None -> key)
             if prev is None and self._stable is not None:
                 return self.keymap.get(self._stable)
 

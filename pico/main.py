@@ -3,7 +3,7 @@ import time
 from wifi import connect
 from display import Display
 from protocol import ServerClient
-from input import Input, UP, DOWN, SELECT, BACK, UNDO
+from input import Input, UP, DOWN, SELECT, BACK, UNDO, BEST1, BEST2, BEST3
 
 
 SERVER_IP = "192.168.1.114"  # CHANGE THIS
@@ -40,7 +40,11 @@ def main():
     last_state_poll = time.ticks_ms()
     poll_ms = 500
 
+    analysis_lines = []  # latest /state analysis.lines for BEST1/2/3
+
     def refresh_state(update_state_oled: bool):
+        nonlocal analysis_lines
+
         st = client.get_state()
         if not st or st.get("type") != "state":
             return
@@ -54,9 +58,10 @@ def main():
 
         analysis = st.get("analysis")
         if isinstance(analysis, dict):
+            analysis_lines = analysis.get("lines", []) or []
             display.show_analysis(
                 depth=analysis.get("depth", 0),
-                lines=analysis.get("lines", []),
+                lines=analysis_lines,
             )
 
     refresh_state(update_state_oled=True)
@@ -64,7 +69,6 @@ def main():
     while True:
         now = time.ticks_ms()
 
-        # keep analysis fresh always; state OLED only in ROOT
         if time.ticks_diff(now, last_state_poll) >= poll_ms:
             refresh_state(update_state_oled=(mode == MODE_ROOT))
             last_state_poll = now
@@ -83,6 +87,22 @@ def main():
             moves = []
             selected_from = None
             refresh_state(update_state_oled=True)
+            continue
+
+        # BEST MOVES are global (s4/s8/s12)
+        if key in (BEST1, BEST2, BEST3):
+            idx = 0 if key == BEST1 else (1 if key == BEST2 else 2)
+            if idx < len(analysis_lines):
+                mv = analysis_lines[idx].get("move")
+                if mv:
+                    client.play_move(mv)
+
+                    mode = MODE_ROOT
+                    cursor = 0
+                    pieces = []
+                    moves = []
+                    selected_from = None
+                    refresh_state(update_state_oled=True)
             continue
 
         if mode == MODE_ROOT:
