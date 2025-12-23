@@ -2,6 +2,7 @@ import json
 import atexit
 import chess
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.parse import urlparse, parse_qs
 
 from server.chess_state import SandboxState
 from server.analysis import StockfishAnalysisEngine
@@ -20,10 +21,15 @@ def make_handler(state, engine):
         def do_GET(self):
             nonlocal last_fen, last_analysis
 
-            if self.path == "/state":
+            parsed = urlparse(self.path)
+            path = parsed.path
+            qs = parse_qs(parsed.query)
+            fresh = qs.get("fresh", ["0"])[0] in ("1", "true", "yes")
+
+            if path == "/state":
                 fen = state.board.fen()
 
-                if last_analysis is None or fen != last_fen:
+                if fresh or last_analysis is None or fen != last_fen:
                     analysis = engine.analyse(state.board)
                     last_analysis = analysis
                     last_fen = fen
@@ -58,7 +64,7 @@ def make_handler(state, engine):
                 }
                 return self._send_json(200, response)
 
-            if self.path == "/piece_list":
+            if path == "/piece_list":
                 seen = set()
                 pieces = []
 
@@ -79,6 +85,7 @@ def make_handler(state, engine):
                     "type": "piece_list",
                     "pieces": pieces,
                 })
+
             self.send_response(404)
             self.end_headers()
 
