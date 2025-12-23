@@ -1,5 +1,4 @@
 import urequests
-import time
 
 
 class ServerClient:
@@ -15,6 +14,30 @@ class ServerClient:
             return data
         except Exception as e:
             print("Protocol error (get_state):", e)
+            return None
+
+    def piece_list(self):
+        try:
+            r = urequests.get(self.base_url + "/piece_list", timeout=self.timeout)
+            data = r.json()
+            r.close()
+            return data
+        except Exception as e:
+            print("Protocol error (piece_list):", e)
+            return None
+
+    def move_list(self, from_sq: str):
+        try:
+            r = urequests.post(
+                self.base_url + "/move_list",
+                json={"from": from_sq},
+                timeout=self.timeout,
+            )
+            data = r.json()
+            r.close()
+            return data
+        except Exception as e:
+            print("Protocol error (move_list):", e)
             return None
 
     def play_move(self, move: str):
@@ -33,10 +56,7 @@ class ServerClient:
 
     def undo(self):
         try:
-            r = urequests.post(
-                self.base_url + "/undo",
-                timeout=self.timeout,
-            )
+            r = urequests.post(self.base_url + "/undo", timeout=self.timeout)
             data = r.json()
             r.close()
             return data
