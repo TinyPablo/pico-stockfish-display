@@ -27,14 +27,18 @@ def make_handler(state, engine):
             fresh = qs.get("fresh", ["0"])[0] in ("1", "true", "yes")
 
             if path == "/state":
-                fen = state.board.fen()
+                board = state.board
 
-                if fresh or last_analysis is None or fen != last_fen:
-                    analysis = engine.analyse(state.board)
-                    last_analysis = analysis
-                    last_fen = fen
+                if getattr(engine, "live", False):
+                    analysis = engine.analyse(board)  # live-updating
                 else:
-                    analysis = last_analysis
+                    fen = board.fen()
+                    if fresh or last_analysis is None or fen != last_fen:
+                        analysis = engine.analyse(board)
+                        last_analysis = analysis
+                        last_fen = fen
+                    else:
+                        analysis = last_analysis
 
                 board = state.board
 
@@ -186,7 +190,11 @@ def make_http_server(host, port, state, engine):
 state = SandboxState()
 engine = StockfishAnalysisEngine(
     engine_path=STOCKFISH_PATH,
-    time_limit=0.2,
+    base_time=0.10,   # first result latency
+    step_time=0.10,   # add per cycle
+    max_time=1.50,    # cap per cycle
+    interval=1.0,     # update cadence (seconds)
+    multipv=3,
 )
 
 

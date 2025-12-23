@@ -54,7 +54,7 @@ def main():
     def refresh_state(update_state_oled: bool):
         nonlocal analysis_lines
 
-        st = client.get_state()
+        st = client.get_state(fresh=False)
         if not st or st.get("type") != "state":
             return
 

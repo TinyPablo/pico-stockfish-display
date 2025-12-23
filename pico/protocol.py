@@ -6,9 +6,12 @@ class ServerClient:
         self.base_url = f"http://{host}:{port}"
         self.timeout = timeout
 
-    def get_state(self):
+    def get_state(self, fresh=False):
         try:
-            r = urequests.get(self.base_url + "/state", timeout=self.timeout)
+            url = self.base_url + "/state"
+            if fresh:
+                url += "?fresh=1"
+            r = urequests.get(url, timeout=self.timeout)
             data = r.json()
             r.close()
             return data
