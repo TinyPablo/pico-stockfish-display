@@ -28,7 +28,7 @@ def main():
 
     display = Display()
     client = ServerClient(SERVER_IP)
-    inp = Input()
+    inp = Input(debounce_ms=40)
 
     mode = MODE_ROOT
     cursor = 0
