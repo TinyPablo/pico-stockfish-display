@@ -157,7 +157,10 @@ def make_handler(state, engine):
             length = int(self.headers.get("Content-Length", 0))
             if length == 0:
                 return None
-            return json.loads(self.rfile.read(length))
+            try:
+                return json.loads(self.rfile.read(length))
+            except json.JSONDecodeError:
+                return None
 
         def _send_json(self, code, obj):
             body = json.dumps(obj).encode()
