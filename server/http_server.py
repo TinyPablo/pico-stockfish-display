@@ -18,7 +18,7 @@ def make_handler(state, engine):
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
-            nonlocal last_fen, last_analysis
+            global last_fen, last_analysis
 
             if self.path == "/state":
                 fen = state.board.fen()
@@ -30,136 +30,105 @@ def make_handler(state, engine):
                 else:
                     analysis = last_analysis
 
-
-                game_over = state.board.is_game_over()
-                outcome = state.board.outcome()
-
                 response = {
                     "type": "state",
                     "turn": "white" if state.board.turn else "black",
                     "move_number": state.board.fullmove_number,
-                    "last_move": (
-                        state.board.peek().uci()
-                        if state.board.move_stack
-                        else None
-                    ),
-                    "game_over": game_over,
-                    "checkmate": state.board.is_checkmate(),
-                    "stalemate": state.board.is_stalemate(),
-                    "winner": (
-                        "white" if outcome and outcome.winner is True
-                        else "black" if outcome and outcome.winner is False
-                        else None
-                    ),
+                    "last_move": (state.board.peek().uci() if state.board.move_stack else None),
                     "analysis": {
                         "depth": analysis.depth,
-                        "lines": [
-                            {"move": l.move, "eval": l.eval}
-                            for l in analysis.lines
-                        ],
+                        "lines": [{"move": l.move, "eval": l.eval} for l in analysis.lines],
                     },
                 }
-                
-                self._send_json(200, response)
-                return
+                return self._send_json(200, response)
 
             if self.path == "/piece_list":
                 seen = set()
                 pieces = []
 
-                for move in state.board.legal_moves:
-                    sq = chess.square_name(move.from_square)
-                    if sq not in seen:
-                        seen.add(sq)
-                        pieces.append(sq)
+                for mv in state.board.legal_moves:
+                    from_sq = chess.square_name(mv.from_square)
+                    if from_sq in seen:
+                        continue
+                    seen.add(from_sq)
 
-                pieces.sort()
+                    piece = state.board.piece_at(mv.from_square)
+                    if piece is None:
+                        continue
 
-                response = {
-                    "type": "piece_list",
-                    "pieces": pieces,
-                }
+                    pieces.append(
+                        {
+                            "square": from_sq,
+                            "piece": chess.piece_name(piece.piece_type),  # pawn/knight/...
+                        }
+                    )
 
-                self._send_json(200, response)
-                return
+                pieces.sort(key=lambda x: x["square"])
+                return self._send_json(200, {"type": "piece_list", "pieces": pieces})
 
             self.send_response(404)
             self.end_headers()
 
         def do_POST(self):
-            nonlocal last_fen, last_analysis
+            global last_fen, last_analysis
 
             if self.path == "/play_move":
                 body = self.read_json()
                 if not body or "move" not in body:
-                    self.send_response(400)
-                    self.end_headers()
-                    return
+                    return self._send_json(400, {"type": "error", "reason": "missing_move"})
 
+                move = body["move"]
                 try:
-                    state.board.push_uci(body["move"])
+                    state.board.push_uci(move)
                     last_fen = None
                     last_analysis = None
-                    self._send_json(200, {"type": "move_result", "ok": True})
+                    return self._send_json(200, {"type": "move_result", "ok": True})
                 except Exception:
-                    self._send_json(
+                    return self._send_json(
                         200,
-                        {
-                            "type": "move_result",
-                            "ok": False,
-                            "reason": "illegal_move",
-                        },
+                        {"type": "move_result", "ok": False, "reason": "illegal_move"},
                     )
-                return
 
             if self.path == "/undo":
                 ok = state.undo()
                 last_fen = None
                 last_analysis = None
-                self._send_json(200, {"type": "move_result", "ok": ok})
-                return
+                return self._send_json(200, {"type": "move_result", "ok": ok})
 
             if self.path == "/move_list":
                 body = self.read_json()
                 if not body or "from" not in body:
-                    self.send_response(400)
-                    self.end_headers()
-                    return
+                    return self._send_json(400, {"type": "error", "reason": "missing_from"})
 
+                from_str = body["from"]
                 try:
-                    from_sq = chess.parse_square(body["from"])
+                    from_sq = chess.parse_square(from_str)
                 except Exception:
-                    self.send_response(400)
-                    self.end_headers()
-                    return
+                    return self._send_json(400, {"type": "error", "reason": "invalid_square"})
 
                 moves = sorted(
                     {
-                        chess.square_name(m.to_square)
-                        for m in state.board.legal_moves
-                        if m.from_square == from_sq
+                        chess.square_name(mv.to_square)
+                        for mv in state.board.legal_moves
+                        if mv.from_square == from_sq
                     }
                 )
-
-                response = {
-                    "type": "move_list",
-                    "from": body["from"],
-                    "moves": moves,
-                }
-
-                self._send_json(200, response)
-                return
+                return self._send_json(200, {"type": "move_list", "from": from_str, "moves": moves})
 
             self.send_response(404)
             self.end_headers()
 
+        def log_message(self, *_):
+            pass
+
         def read_json(self):
             length = int(self.headers.get("Content-Length", 0))
-            if length == 0:
+            if length <= 0:
                 return None
+            raw = self.rfile.read(length)
             try:
-                return json.loads(self.rfile.read(length))
-            except json.JSONDecodeError:
+                return json.loads(raw)
+            except Exception:
                 return None
 
         def _send_json(self, code, obj):
