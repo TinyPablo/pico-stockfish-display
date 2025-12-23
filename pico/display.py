@@ -52,7 +52,7 @@ class Display:
 
         oled.text(str(title)[:16], 0, 0)
 
-        max_visible = 4
+        max_visible = 3
         n = len(lines)
         off = self._menu_window(cursor, n, max_visible)
 
