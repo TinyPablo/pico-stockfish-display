@@ -3,7 +3,7 @@ import time
 from wifi import connect
 from display import Display
 from protocol import ServerClient
-from input import Input, UP, DOWN, SELECT, BACK, UNDO, BEST1, BEST2, BEST3
+from input import Input, UP, DOWN, SELECT, BACK, UNDO, BEST1, BEST2, BEST3, RESET
 
 
 SERVER_IP = "192.168.1.114"  # CHANGE THIS
@@ -103,6 +103,16 @@ def main():
                     moves = []
                     selected_from = None
                     refresh_state(update_state_oled=True)
+            continue
+        
+        if key == RESET:
+            client.reset()
+            mode = MODE_ROOT
+            cursor = 0
+            pieces = []
+            moves = []
+            selected_from = None
+            refresh_state(update_state_oled=True)
             continue
 
         if mode == MODE_ROOT:

@@ -13,6 +13,8 @@ BEST1 = "BEST1"   # s4
 BEST2 = "BEST2"   # s8
 BEST3 = "BEST3"   # s12
 
+RESET = "RESET" # s5
+
 
 class Input:
     """
@@ -53,6 +55,8 @@ class Input:
             4: BEST1,   # row1 col4 (s4)
             8: BEST2,   # row2 col4 (s8)
             12: BEST3,  # row3 col4 (s12)
+            
+            5: RESET,   # s5
         }
 
         self.debounce_ms = debounce_ms

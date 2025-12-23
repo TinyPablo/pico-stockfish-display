@@ -63,3 +63,13 @@ class ServerClient:
         except Exception as e:
             print("Protocol error (undo):", e)
             return None
+        
+    def reset(self):
+        try:
+            r = urequests.post(self.base_url + "/reset", timeout=self.timeout)
+            data = r.json()
+            r.close()
+            return data
+        except Exception as e:
+            print("Protocol error (reset):", e)
+            return None

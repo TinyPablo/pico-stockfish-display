@@ -128,6 +128,20 @@ def make_handler(state, engine):
                 )
                 return self._send_json(200, {"type": "move_list", "from": from_str, "moves": moves})
 
+            if self.path == "/reset":
+                state.board.reset()
+                state.mode = state.ROOT
+                state.cursor = 0
+                state.selected_from = None
+                state.moves = []
+                state.update_pieces()
+
+                last_fen = None
+                last_analysis = None
+
+                return self._send_json(200, {"type": "move_result", "ok": True})
+            
+            
             self.send_response(404)
             self.end_headers()
 
