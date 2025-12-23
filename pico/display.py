@@ -49,13 +49,12 @@ class Display:
         oled = self.state_oled
         oled.fill(0)
 
-        oled.text(str(title)[:16], 0, 0)
-
-        max_visible = 3
+        # No title line (remove "PIECES"/"MOVES")
+        max_visible = 4
         n = len(lines)
         off = self._menu_window(cursor, n, max_visible)
 
-        y = 16
+        y = 0
         for i in range(off, min(off + max_visible, n)):
             prefix = ">" if i == cursor else " "
             oled.text((prefix + str(lines[i]))[:16], 0, y)
@@ -82,11 +81,11 @@ class Display:
 
     def show_piece_list(self, pieces, cursor: int):
         lines = [self._piece_to_label(p) for p in (pieces or [])]
-        self._show_menu("PIECES", lines, cursor, "UD SEL BK")
+        self._show_menu("", lines, cursor, "UD SEL BK")
 
     def show_move_list(self, from_sq: str, moves: list, cursor: int):
         lines = ["%s->%s" % (from_sq, m) for m in (moves or [])]
-        self._show_menu("MOVES", lines, cursor, "UD SEL BK")
+        self._show_menu("", lines, cursor, "UD SEL BK")
 
     # ---------- ANALYSIS OLED ----------
     def show_analysis(self, depth, lines):
