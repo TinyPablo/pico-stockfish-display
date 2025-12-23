@@ -18,7 +18,7 @@ def make_handler(state, engine):
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
-            global last_fen, last_analysis
+            nonlocal last_fen, last_analysis
 
             if self.path == "/state":
                 fen = state.board.fen()
@@ -30,11 +30,27 @@ def make_handler(state, engine):
                 else:
                     analysis = last_analysis
 
+                board = state.board
+
+                game_over = board.is_game_over()
+                checkmate = board.is_checkmate()
+                stalemate = board.is_stalemate()
+
+                winner = None
+                if checkmate:
+                    winner = "white" if not board.turn else "black"
+
                 response = {
                     "type": "state",
-                    "turn": "white" if state.board.turn else "black",
-                    "move_number": state.board.fullmove_number,
-                    "last_move": (state.board.peek().uci() if state.board.move_stack else None),
+                    "turn": "white" if board.turn else "black",
+                    "move_number": board.fullmove_number,
+                    "last_move": (board.peek().uci() if board.move_stack else None),
+
+                    "game_over": game_over,
+                    "checkmate": checkmate,
+                    "stalemate": stalemate,
+                    "winner": winner,
+
                     "analysis": {
                         "depth": analysis.depth,
                         "lines": [{"move": l.move, "eval": l.eval} for l in analysis.lines],
@@ -56,21 +72,18 @@ def make_handler(state, engine):
                     if piece is None:
                         continue
 
-                    pieces.append(
-                        {
-                            "square": from_sq,
-                            "piece": chess.piece_name(piece.piece_type),  # pawn/knight/...
-                        }
-                    )
+                    pieces.append(from_sq)
 
-                pieces.sort(key=lambda x: x["square"])
-                return self._send_json(200, {"type": "piece_list", "pieces": pieces})
-
+                pieces.sort()
+                return self._send_json(200, {
+                    "type": "piece_list",
+                    "pieces": pieces,
+                })
             self.send_response(404)
             self.end_headers()
 
         def do_POST(self):
-            global last_fen, last_analysis
+            nonlocal last_fen, last_analysis
 
             if self.path == "/play_move":
                 body = self.read_json()
