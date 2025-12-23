@@ -94,24 +94,21 @@ class Display:
         oled = self.analysis_oled
         oled.fill(0)
 
-        oled.text(("D:%s" % (depth,))[:16], 0, 0)
+        # header: depth + eval indicator
+        if lines:
+            e = lines[0].get("eval", 0.0)
+            side = "W" if e >= 0 else "B"
+            ev = abs(e)
+            oled.text("D:%d %s%.2f" % (depth, side, ev), 0, 0)
+        else:
+            oled.text("D:%d --" % (depth,), 0, 0)
 
         y = 16
-        for i, line in enumerate((lines or [])[:3], 1):
-            if isinstance(line, dict):
-                move = line.get("move", "----")
-                eval_ = line.get("eval", 0.0)
-            else:
-                move = "----"
-                eval_ = 0.0
-
-            try:
-                eval_f = float(eval_)
-            except Exception:
-                eval_f = 0.0
-
-            sign = "+" if eval_f >= 0 else ""
-            oled.text(("%d %s %s%.2f" % (i, move, sign, eval_f))[:16], 0, y)
+        for i, line in enumerate(lines[:3], 1):
+            move = line["move"]
+            eval_ = line["eval"]
+            sign = "+" if eval_ >= 0 else ""
+            oled.text("%d %s %s%.2f" % (i, move, sign, eval_), 0, y)
             y += 12
 
         oled.show()
