@@ -30,6 +30,10 @@ def make_handler(state, engine):
                 else:
                     analysis = last_analysis
 
+
+                game_over = state.board.is_game_over()
+                outcome = state.board.outcome()
+
                 response = {
                     "type": "state",
                     "turn": "white" if state.board.turn else "black",
@@ -37,6 +41,14 @@ def make_handler(state, engine):
                     "last_move": (
                         state.board.peek().uci()
                         if state.board.move_stack
+                        else None
+                    ),
+                    "game_over": game_over,
+                    "checkmate": state.board.is_checkmate(),
+                    "stalemate": state.board.is_stalemate(),
+                    "winner": (
+                        "white" if outcome and outcome.winner is True
+                        else "black" if outcome and outcome.winner is False
                         else None
                     ),
                     "analysis": {
@@ -47,7 +59,7 @@ def make_handler(state, engine):
                         ],
                     },
                 }
-
+                
                 self._send_json(200, response)
                 return
 
