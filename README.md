@@ -1,16 +1,9 @@
 ## Current status
 
-**v0.1 – Pico read-only display**
+This project was mostly vibe-coded as a learning experiment, and it actually works.
 
-Implemented:
+- Python server with Stockfish analysis
+- Pico W client with dual OLED output
+- Keypad-driven chess UI over Wi‑Fi
 
-- Python server with Stockfish-backed analysis
-- HTTP polling endpoint (`/state`)
-- Raspberry Pi Pico W client
-- Dual SSD1306 OLED output (state + analysis)
-- Wi-Fi connectivity and periodic refresh
-
-Not yet implemented:
-
-- Pico keypad input
-- Pico → server command wiring
+Built as a learning project, now in a stable state.
